@@ -1,0 +1,14 @@
+cursor.logs
+build.MD
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+*.jar
+*.war
+*.log
+.idea/
+*.iml
+out/
+.DS_Store
+test_plots/

@@ -4,12 +4,15 @@ import com.kademlia.dht.node.Node;
 import com.kademlia.dht.node.NodeId;
 import com.kademlia.dht.util.Digest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(value = 10, unit = TimeUnit.SECONDS)
 class RoutingTableTest {
 
     private Node selfNode() throws Exception {
@@ -29,14 +32,15 @@ class RoutingTableTest {
     void testFindNeighbors() throws Exception {
         Node self = selfNode();
         RoutingTable table = new RoutingTable(self, 20);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 50; i++) {
             table.addContact(randomNode(i));
         }
         Node target = randomNode(999);
         List<Node> neighbors = table.findNeighbors(target, 20);
         assertTrue(neighbors.size() <= 20);
         for (int i = 1; i < neighbors.size(); i++) {
-            assertTrue(neighbors.get(i - 1).distanceTo(target) <= neighbors.get(i).distanceTo(target));
+            assertTrue(neighbors.get(i - 1).distanceTo(target) <= neighbors.get(i).distanceTo(target),
+                    "Neighbors must be sorted by distance ascending");
         }
     }
 

@@ -28,7 +28,8 @@ public final class NodeId {
     }
 
     /**
-     * XOR distance: smaller return value means closer (same ID = 0, differing at MSB = 159).
+     * XOR distance: smaller return value means closer (same ID = 0, range 1-160 for different).
+     * First differing bit: MSB = 0, LSB = 159. Return bitPosition + 1 so range is 1-160.
      * Used for ordering "K closest" (min-heap of distance).
      */
     public int distanceTo(NodeId other) {
@@ -38,7 +39,9 @@ public final class NodeId {
         for (int i = 0; i < SIZE_BYTES; i++) {
             int xor = (this.id[i] ^ other.id[i]) & 0xFF;
             if (xor != 0) {
-                int bitPosition = i * 8 + (7 - Integer.numberOfLeadingZeros(xor));
+                int leadingZeros = Integer.numberOfLeadingZeros(xor & 0xFF);
+                int bitInByte = leadingZeros - 24;
+                int bitPosition = i * 8 + bitInByte;
                 return bitPosition + 1;
             }
         }

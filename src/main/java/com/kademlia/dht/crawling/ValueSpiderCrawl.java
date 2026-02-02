@@ -3,6 +3,7 @@ package com.kademlia.dht.crawling;
 import com.kademlia.dht.node.Node;
 import com.kademlia.dht.node.NodeHeap;
 import com.kademlia.dht.protocol.FindValueResponse;
+import com.kademlia.dht.protocol.KademliaProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

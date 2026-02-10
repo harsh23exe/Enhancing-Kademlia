@@ -76,11 +76,19 @@ public class Main {
                             boolean success = server.set(key, val.getBytes()).get(10, TimeUnit.SECONDS);
                             System.out.println(success ? "Stored" : "Failed");
                         }
+                        case "delete" -> {
+                            if (parts.length < 2) {
+                                System.out.println("Usage: delete <key>");
+                                continue;
+                            }
+                            boolean success = server.delete(parts[1].trim()).get(10, TimeUnit.SECONDS);
+                            System.out.println(success ? "Deleted" : "Failed");
+                        }
                         case "quit", "exit" -> {
                             server.close();
                             return;
                         }
-                        default -> System.out.println("Unknown command: " + cmd + ". Use get, set, quit, exit.");
+                        default -> System.out.println("Unknown command: " + cmd + ". Use get, set, delete, quit, exit.");
                     }
                 }
             }
@@ -101,7 +109,7 @@ public class Main {
         System.out.println("  --bootstrap=HOST:PORT[,HOST:PORT]  Bootstrap nodes");
         System.out.println("  --help, -h        Show this help");
         System.out.println();
-        System.out.println("REPL commands: get <key>, set <key>=<value>, quit, exit");
+        System.out.println("REPL commands: get <key>, set <key>=<value>, delete <key>, quit, exit");
     }
 
     static Map<String, String> parseArgs(String[] args) {

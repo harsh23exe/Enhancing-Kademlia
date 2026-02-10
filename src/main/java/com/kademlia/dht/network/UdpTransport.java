@@ -25,7 +25,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * UDP transport: send RPC requests, receive responses; dispatch incoming requests to handler.
  */
-public class UdpTransport implements AutoCloseable {
+public class UdpTransport implements Transport {
     private static final Logger log = LoggerFactory.getLogger(UdpTransport.class);
     private static final int MAX_PACKET_SIZE = 65507;
 
@@ -35,12 +35,9 @@ public class UdpTransport implements AutoCloseable {
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private volatile boolean running = true;
 
-    public interface RequestHandler {
-        void handleRequest(RpcRequest request, InetAddress fromIp, int fromPort);
-    }
-
     private volatile RequestHandler requestHandler;
 
+    @Override
     public void setRequestHandler(RequestHandler handler) {
         this.requestHandler = handler;
     }
@@ -87,6 +84,7 @@ public class UdpTransport implements AutoCloseable {
         }
     }
 
+    @Override
     public CompletableFuture<RpcResponse> send(RpcRequest request, InetAddress ip, int port, Duration timeout) {
         CompletableFuture<RpcResponse> future = new CompletableFuture<>();
         ByteArray key = new ByteArray(request.messageId());
@@ -113,6 +111,7 @@ public class UdpTransport implements AutoCloseable {
         return future;
     }
 
+    @Override
     public void sendResponse(RpcResponse response, InetAddress ip, int port) {
         try {
             byte[] encoded = codec.encode(response);

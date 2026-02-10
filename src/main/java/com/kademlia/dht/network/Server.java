@@ -39,7 +39,7 @@ public class Server implements AutoCloseable {
     private Node selfNode;
     private IStorage storage;
     private DynamicQuorum quorum;
-    private UdpTransport transport;
+    private Transport transport;
     private KademliaProtocol protocol;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -53,9 +53,16 @@ public class Server implements AutoCloseable {
     }
 
     public void listen(int port, String iface) throws IOException {
+        listenWithTransport(new UdpTransport(port), port, iface);
+    }
+
+    /**
+     * Attach an existing transport (e.g. in-process for tests). Does not start a UDP socket.
+     */
+    public void listenWithTransport(Transport transport, int port, String iface) throws IOException {
         InetAddress bindAddr = InetAddress.getByName(iface);
         this.selfNode = new Node(selfNode.id(), bindAddr, port);
-        this.transport = new UdpTransport(port);
+        this.transport = transport;
         this.protocol = new KademliaProtocol(selfNode, storage, ksize, transport);
         transport.setRequestHandler(protocol::handleRequest);
         scheduler.scheduleAtFixedRate(this::refreshTable, 3600, 3600, TimeUnit.SECONDS);
@@ -110,7 +117,7 @@ public class Server implements AutoCloseable {
         long startTime = System.nanoTime();
         Optional<byte[]> cached = storage.get(dkey);
         if (cached.isPresent()) {
-            return CompletableFuture.completedFuture(cached);
+            return CompletableFuture.completedFuture(emptyAsAbsent(cached));
         }
         Node target = new Node(new NodeId(dkey), null, 0);
         List<Node> nearest = protocol.getRoutingTable().findNeighbors(target, ksize);
@@ -123,9 +130,23 @@ public class Server implements AutoCloseable {
         return spider.find()
                 .thenApply(result -> {
                     long latency = System.nanoTime() - startTime;
-                    quorum.adjustQuorum(latency, result.isPresent());
-                    return result;
+                    quorum.adjustQuorum(latency, result.isPresent() && result.get().length > 0);
+                    return emptyAsAbsent(result);
                 });
+    }
+
+    private static Optional<byte[]> emptyAsAbsent(Optional<byte[]> value) {
+        if (value.isEmpty() || value.get().length == 0) {
+            return Optional.empty();
+        }
+        return value;
+    }
+
+    /**
+     * Delete a key by storing a tombstone (empty value). Get will return empty for deleted keys.
+     */
+    public CompletableFuture<Boolean> delete(String key) {
+        return set(key, new byte[0]);
     }
 
     public CompletableFuture<Boolean> set(String key, byte[] value) {

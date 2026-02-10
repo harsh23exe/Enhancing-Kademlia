@@ -4,7 +4,7 @@ import com.kademlia.dht.node.Node;
 import com.kademlia.dht.node.NodeId;
 import com.kademlia.dht.routing.RoutingTable;
 import com.kademlia.dht.storage.IStorage;
-import com.kademlia.dht.network.UdpTransport;
+import com.kademlia.dht.network.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,10 +28,10 @@ public class KademliaProtocol {
     private final Node selfNode;
     private final RoutingTable routingTable;
     private final IStorage storage;
-    private final UdpTransport transport;
+    private final Transport transport;
     private final int ksize;
 
-    public KademliaProtocol(Node selfNode, IStorage storage, int ksize, UdpTransport transport) {
+    public KademliaProtocol(Node selfNode, IStorage storage, int ksize, Transport transport) {
         this.selfNode = selfNode;
         this.routingTable = new RoutingTable(selfNode, ksize);
         this.storage = storage;

@@ -14,11 +14,9 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test: starts two servers, bootstrap, set/get. Disabled by default because it can
- * hang (UDP/network may block without respecting timeouts). Run manually when needed:
- *   ./gradlew test --tests "com.kademlia.dht.ServerIntegrationTest"
+ * Integration tests: two-node set/get. testSetGet uses real UDP (disabled by default).
+ * testSetGetSimulated and testSingleNodeSimulated use in-process transport.
  */
-@Disabled("Integration test can hang on UDP/network; run manually with --tests ServerIntegrationTest")
 @Timeout(value = 30, unit = TimeUnit.SECONDS)
 class ServerIntegrationTest {
 
@@ -34,6 +32,7 @@ class ServerIntegrationTest {
     }
 
     @Test
+    @Disabled("UDP test; run manually with --tests 'com.kademlia.dht.ServerIntegrationTest.testSetGet'")
     void testSetGet() throws Exception {
         server1 = new Server(20, 3, null, null);
         server2 = new Server(20, 3, null, null);
@@ -44,5 +43,28 @@ class ServerIntegrationTest {
         Optional<byte[]> result = server2.get("test_key").get(10, TimeUnit.SECONDS);
         assertTrue(result.isPresent());
         assertEquals("test_value", new String(result.get()));
+    }
+
+    @Test
+    @Disabled("Simulated cluster; enable to run without UDP")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testSingleNodeSimulated() throws Exception {
+        try (TestCluster cluster = TestCluster.createSimulated(1, 38468, 20, 3)) {
+            Optional<byte[]> result = cluster.getServers().get(0).get("missing").get(2, TimeUnit.SECONDS);
+            assertTrue(result.isEmpty());
+        }
+    }
+
+    @Test
+    @Disabled("Simulated cluster; enable to run without UDP")
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
+    void testSetGetSimulated() throws Exception {
+        try (TestCluster cluster = TestCluster.createSimulated(2, 28468, 20, 3)) {
+            List<Server> servers = cluster.getServers();
+            servers.get(0).set("test_key", "test_value".getBytes()).get(10, TimeUnit.SECONDS);
+            Optional<byte[]> result = servers.get(1).get("test_key").get(10, TimeUnit.SECONDS);
+            assertTrue(result.isPresent());
+            assertEquals("test_value", new String(result.get()));
+        }
     }
 }
